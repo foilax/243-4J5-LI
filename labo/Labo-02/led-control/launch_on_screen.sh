@@ -9,4 +9,4 @@ echo ""
 sudo chvt 1
 
 # Lancer le programme sur tty1
-sudo setsid sh -c 'exec </dev/tty1 >/dev/tty1 2>&1 python3 /home/fpoisson/243-4J5-LI/labo2/led-control/touch_ui_mqtt.py'
+sudo setsid sh -c 'exec </dev/tty1 >/dev/tty1 2>&1 python3 /home/foilax/243-4J5-LI/labo/Labo-02/led-control/touch_ui_mqtt.py'

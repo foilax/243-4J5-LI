@@ -115,14 +115,14 @@ public:
 
   int connect(IPAddress ip, uint16_t port) { return 0; }
   int connect(const char *host, uint16_t port) {
-    Serial.println("[WSS] Connexion SSL...");
+    //Serial.println("[WSS] Connexion SSL...");
 
     if (!_sslClient->connect(host, port)) {
       Serial.println("[WSS] Echec connexion SSL");
       return 0;
     }
 
-    Serial.println("[WSS] SSL connecte, envoi handshake WebSocket...");
+    //Serial.println("[WSS] SSL connecte, envoi handshake WebSocket...");
     String wsKey = generateWebSocketKey();
 
     _sslClient->print("GET ");
@@ -358,14 +358,14 @@ void checkButtons() {
 }
 
 bool reconnectMQTT() {
-  Serial.println("[MQTT] Connexion au broker...");
+  //Serial.println("[MQTT] Connexion au broker...");
 
   if (mqttClient.connect(MQTT_CLIENT_ID, MQTT_USER, MQTT_PASS)) {
     Serial.println("[MQTT] Connecte!");
 
     mqttClient.subscribe(LED1_SET_TOPIC);
     mqttClient.subscribe(LED2_SET_TOPIC);
-    Serial.println("[MQTT] Souscriptions envoyees");
+    //Serial.println("[MQTT] Souscriptions envoyees");
 
     return true;
   }
@@ -402,17 +402,17 @@ void setup() {
   WiFi.mode(WIFI_STA);
 
 #ifdef WIFI_SECURITY_WPA2_ENTERPRISE
-  Serial.println("Using WPA2-Enterprise connection.");
+  //Serial.println("Using WPA2-Enterprise connection.");
   esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)EAP_IDENTITY, strlen(EAP_IDENTITY));
   esp_wifi_sta_wpa2_ent_set_username((uint8_t *)EAP_USERNAME, strlen(EAP_USERNAME));
   esp_wifi_sta_wpa2_ent_set_password((uint8_t *)EAP_PASSWORD, strlen(EAP_PASSWORD));
   esp_wifi_sta_wpa2_ent_enable();
   WiFi.begin(WIFI_SSID);
 #elif defined(WIFI_SECURITY_WPA2_PERSONAL)
-  Serial.println("Using WPA2-Personal connection.");
+  //Serial.println("Using WPA2-Personal connection.");
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 #else
-  Serial.println("Using Open/Undefined WiFi connection.");
+  //Serial.println("Using Open/Undefined WiFi connection.");
   WiFi.begin(WIFI_SSID);
 #endif
 
@@ -434,7 +434,7 @@ void setup() {
   Serial.println(MQTT_CLIENT_ID);
 
   // Configurer WiFiClientSecure
-  Serial.println("[SSL] Configuration du client SSL...");
+  //Serial.println("[SSL] Configuration du client SSL...");
   wifiClient.setInsecure(); // Désactiver la vérification des certificats pour la démo
 
   // Configurer MQTT

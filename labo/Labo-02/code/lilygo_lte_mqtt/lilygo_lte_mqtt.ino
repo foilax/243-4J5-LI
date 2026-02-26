@@ -41,6 +41,8 @@ char BUTTON1_STATE_TOPIC[50];
 char BUTTON2_STATE_TOPIC[50];
 char LED1_SET_TOPIC[50];
 char LED2_SET_TOPIC[50];
+char LED1_STATE_TOPIC[50];
+char LED2_STATE_TOPIC[50];
 
 // --- Configuration des broches (Pins) ---
 const int LED1_PIN = 32;
@@ -319,6 +321,13 @@ int lastButton2State = HIGH;
 unsigned long lastGprsCheck = 0;
 const unsigned long GPRS_CHECK_INTERVAL = 30000;
 
+// Variables globales pour debounce et toggle
+bool led1State = false;
+bool led2State = false;
+unsigned long lastButton1Press = 0;
+unsigned long lastButton2Press = 0;
+const unsigned long DEBOUNCE_DELAY = 200;  // 200ms
+
 // ============================================================================
 // CALLBACK MQTT
 // ============================================================================
@@ -336,18 +345,22 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
   if (strcmp(topic, LED1_SET_TOPIC) == 0) {
     if (msg == "ON") {
+      led1State = true;
       digitalWrite(LED1_PIN, HIGH);
       Serial.println("[LED1] Allumee (ROUGE)");
     } else if (msg == "OFF") {
+      led1State = false;
       digitalWrite(LED1_PIN, LOW);
       Serial.println("[LED1] Eteinte");
     }
   }
   else if (strcmp(topic, LED2_SET_TOPIC) == 0) {
     if (msg == "ON") {
+      led2State = true;
       digitalWrite(LED2_PIN, HIGH);
       Serial.println("[LED2] Allumee (VERTE)");
     } else if (msg == "OFF") {
+      led2State = false;
       digitalWrite(LED2_PIN, LOW);
       Serial.println("[LED2] Eteinte");
     }
@@ -396,6 +409,8 @@ bool initModem() {
   snprintf(LED2_SET_TOPIC, sizeof(LED2_SET_TOPIC), "%s/led/2/set", MQTT_CLIENT_ID);
   snprintf(BUTTON1_STATE_TOPIC, sizeof(BUTTON1_STATE_TOPIC), "%s/button/1/state", MQTT_CLIENT_ID);
   snprintf(BUTTON2_STATE_TOPIC, sizeof(BUTTON2_STATE_TOPIC), "%s/button/2/state", MQTT_CLIENT_ID);
+  snprintf(LED1_STATE_TOPIC, sizeof(LED1_STATE_TOPIC), "%s/led/1/state", MQTT_CLIENT_ID);
+  snprintf(LED2_STATE_TOPIC, sizeof(LED2_STATE_TOPIC), "%s/led/2/state", MQTT_CLIENT_ID);
 
   Serial.println("[MODEM] Initialise");
   return true;
@@ -447,31 +462,48 @@ bool connectToNetwork() {
 }
 
 void checkButtons() {
-  long now = millis();
-
-  if (now - lastButtonCheck < 100) {
-    return;
-  }
-  lastButtonCheck = now;
+  unsigned long now = millis();
 
   if (!mqttClient.connected()) return;
 
-  int button1State = digitalRead(BUTTON1_PIN);
-  if (button1State != lastButton1State) {
-    lastButton1State = button1State;
-    const char* state = (button1State == LOW) ? "PRESSED" : "RELEASED";
-    mqttClient.publish(BUTTON1_STATE_TOPIC, state);
-    Serial.print("[BTN1] -> ");
-    Serial.println(state);
+  // Bouton 1 - Toggle LED 1
+  if (digitalRead(BUTTON1_PIN) == LOW) {  // Bouton pressé (pull-up)
+    if (now - lastButton1Press > DEBOUNCE_DELAY) {
+      lastButton1Press = now;
+      led1State = !led1State;  // Toggle
+      digitalWrite(LED1_PIN, led1State ? HIGH : LOW);
+
+      // Publier l'état sur MQTT
+      const char* state = led1State ? "ON" : "OFF";
+      mqttClient.publish(LED1_STATE_TOPIC, state);
+      Serial.print("[BTN1] LED1 toggled: ");
+      Serial.println(state);
+      
+      // On publie aussi l'état du bouton pour l'interface
+      mqttClient.publish(BUTTON1_STATE_TOPIC, "PRESSED");
+    }
+  } else {
+      if (now - lastButton1Press > DEBOUNCE_DELAY) {
+          // Relaché (simplifié pour l'interface)
+      }
   }
 
-  int button2State = digitalRead(BUTTON2_PIN);
-  if (button2State != lastButton2State) {
-    lastButton2State = button2State;
-    const char* state = (button2State == LOW) ? "PRESSED" : "RELEASED";
-    mqttClient.publish(BUTTON2_STATE_TOPIC, state);
-    Serial.print("[BTN2] -> ");
-    Serial.println(state);
+  // Bouton 2 - Toggle LED 2
+  if (digitalRead(BUTTON2_PIN) == LOW) {  // Bouton pressé (pull-up)
+    if (now - lastButton2Press > DEBOUNCE_DELAY) {
+      lastButton2Press = now;
+      led2State = !led2State;  // Toggle
+      digitalWrite(LED2_PIN, led2State ? HIGH : LOW);
+
+      // Publier l'état sur MQTT
+      const char* state = led2State ? "ON" : "OFF";
+      mqttClient.publish(LED2_STATE_TOPIC, state);
+      Serial.print("[BTN2] LED2 toggled: ");
+      Serial.println(state);
+      
+      // On publie aussi l'état du bouton pour l'interface
+      mqttClient.publish(BUTTON2_STATE_TOPIC, "PRESSED");
+    }
   }
 }
 
@@ -535,7 +567,7 @@ void setup() {
   Serial.println("[SSL] Configuration du client SSL...");
   sslClient.setClient(&gsmClient);
   sslClient.setInsecure();
-  sslClient.setBufferSizes(2048, 1024);
+  sslClient.setBufferSizes(8192, 2048);
   sslClient.setDebugLevel(1);
 
   // Configurer MQTT

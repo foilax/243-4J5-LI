@@ -273,62 +273,67 @@ class LEDControlUI:
 
     def _build_buttons(self, h, w):
         """
-        Construit 3 gros boutons toggle: LED1, LED2, QUIT
-        Format toggle switch avec état visible
+        Construit 3 boutons: LED1 et LED2 côte à côte, et QUIT en bas
         """
         self.buttons = []
-        # Boutons ÉNORMES pour faciliter l'utilisation tactile
-        btn_width = min(70, w - 6)  # Plus larges
-        btn_height = 12  # TRÈS hauts!
+        
+        # Calcul des dimensions pour côte à côte
+        btn_width = max(20, min(40, (w - 12) // 2))
+        btn_height = 10
+        quit_height = 5
+        
+        col_spacing = 4
+        total_w = btn_width * 2 + col_spacing
+        start_col = (w - total_w) // 2
+        
+        # Position verticale centrée
+        total_height = btn_height + 2 + quit_height
+        start_row = max(6, (h - total_height) // 2 + 2)
 
-        # Position verticale de départ - bien centré verticalement
-        total_height = 3 * btn_height + 2 * 3  # 3 boutons + 2 espacements
-        start_row = max(6, (h - total_height - 4) // 2 + 4)  # +4 pour le titre et status
+        # Bouton LED 1 (Gauche)
+        self.buttons.append({
+            "name": "LED1",
+            "label": "ROUGE",
+            "state_attr": "led1_state",
+            "row": start_row,
+            "col": start_col,
+            "height": btn_height,
+            "width": btn_width,
+            "active": False,
+            "topic": self.led1_topic,
+            "color_on": 4,   # Rouge
+            "color_off": 6,  # Bleu/gris
+        })
 
-        # Configuration des boutons toggle
-        buttons_config = [
-            {
-                "name": "LED1",
-                "label": "LED ROUGE",
-                "state_attr": "led1_state",
-                "topic": self.led1_topic,
-                "color_on": 4,   # Rouge
-                "color_off": 6,  # Jaune/gris
-            },
-            {
-                "name": "LED2",
-                "label": "LED VERTE",
-                "state_attr": "led2_state",
-                "topic": self.led2_topic,
-                "color_on": 5,   # Vert
-                "color_off": 7,  # Bleu/gris
-            },
-            {
-                "name": "QUIT",
-                "label": "QUITTER",
-                "state_attr": None,
-                "topic": None,
-                "color_on": 1,
-                "color_off": 1,
-            },
-        ]
+        # Bouton LED 2 (Droite)
+        self.buttons.append({
+            "name": "LED2",
+            "label": "VERTE",
+            "state_attr": "led2_state",
+            "row": start_row,
+            "col": start_col + btn_width + col_spacing,
+            "height": btn_height,
+            "width": btn_width,
+            "active": False,
+            "topic": self.led2_topic,
+            "color_on": 5,   # Vert
+            "color_off": 7,  # Bleu/gris
+        })
 
-        for i, btn_cfg in enumerate(buttons_config):
-            row = start_row + i * (btn_height + 3)  # Espacement de 3 lignes
-            col = (w - btn_width) // 2
-            self.buttons.append({
-                "name": btn_cfg["name"],
-                "label": btn_cfg["label"],
-                "state_attr": btn_cfg["state_attr"],
-                "row": row,
-                "col": col,
-                "height": btn_height,
-                "width": btn_width,
-                "active": False,
-                "topic": btn_cfg["topic"],
-                "color_on": btn_cfg["color_on"],
-                "color_off": btn_cfg["color_off"],
-            })
+        # Bouton QUIT (En bas, prend toute la largeur)
+        self.buttons.append({
+            "name": "QUIT",
+            "label": "QUITTER",
+            "state_attr": None,
+            "row": start_row + btn_height + 2,
+            "col": start_col,
+            "height": quit_height,
+            "width": total_w,
+            "active": False,
+            "topic": None,
+            "color_on": 1,
+            "color_off": 1,
+        })
 
     def _draw(self):
         self.stdscr.erase()
